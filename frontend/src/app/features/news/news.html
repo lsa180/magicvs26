@@ -11,7 +11,7 @@
     </div>
     <div class="flex gap-2">
       <span class="px-4 py-1.5 rounded-full bg-surface-container-high text-xs font-label uppercase tracking-widest text-on-surface-variant border border-outline-variant/10">
-        Actualizado: 12 Mayo
+        Actualizado: {{ lastUpdated() }}
       </span>
     </div>
   </div>
@@ -61,12 +61,21 @@
     <div class="relative z-10 max-w-xl">
       <h2 class="text-3xl md:text-4xl font-headline font-bold mb-6">No te pierdas ni un solo <span class="text-primary italic">draw step</span>.</h2>
       <p class="text-on-surface-variant mb-8 text-lg">Suscríbete a nuestra newsletter semanal para recibir el resumen del meta directamente en tu correo.</p>
-      <form class="flex flex-col sm:flex-row gap-4">
-        <input class="flex-grow bg-[#131313] border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary text-white py-4 px-6 transition-all font-body placeholder:text-zinc-600 rounded-lg outline-none" placeholder="tu@correo.com" type="email">
+      <form class="flex flex-col sm:flex-row gap-4" (ngSubmit)="subscribe()">
+        <input 
+          class="flex-grow bg-[#131313] border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary text-white py-4 px-6 transition-all font-body placeholder:text-zinc-600 rounded-lg outline-none" 
+          placeholder="tu@correo.com" 
+          type="email"
+          name="email"
+          [(ngModel)]="newsletterEmail"
+          required>
         <button class="px-8 py-4 bg-gradient-to-r from-primary to-primary-container text-white font-bold uppercase tracking-widest text-sm hover:shadow-[0_0_20px_rgba(142,68,173,0.4)] transition-all rounded-lg" type="submit">
           Suscribirme
         </button>
       </form>
+      @if (subscriptionStatus) {
+        <p class="mt-4 text-primary text-sm font-medium animate-pulse">{{ subscriptionStatus }}</p>
+      }
     </div>
   </div>
 </section>
