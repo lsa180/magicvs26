@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { isValidUsername, isValidEmail, isValidPassword, sanitizeDisplayName, containsMaliciousPayload } from '../../shared/validation';
 
 @Component({
   selector: 'app-registro',
@@ -26,12 +27,32 @@ export class Registro {
     this.message = null;
     this.error = null;
 
+    // Frontend validation
+    if (!isValidUsername(this.username)) {
+      this.error = 'Usuario inválido. Solo letras, números, guion bajo o guion medio (3-30 caracteres).';
+      return;
+    }
+    if (!isValidEmail(this.email)) {
+      this.error = 'Email con formato inválido.';
+      return;
+    }
+    if (!isValidPassword(this.password)) {
+      this.error = 'La contraseña debe tener entre 8 y 12 caracteres, al menos una mayúscula, un número y un símbolo.';
+      return;
+    }
+    if (containsMaliciousPayload(this.username) || containsMaliciousPayload(this.email) || containsMaliciousPayload(this.displayName)) {
+      this.error = 'Entrada sospechosa detectada.';
+      return;
+    }
+
+    const safeDisplay = sanitizeDisplayName(this.displayName);
+
     this.http
       .post<UserResponse>(this.apiUrl, {
         username: this.username,
         email: this.email,
         password: this.password,
-        displayName: this.displayName,
+        displayName: safeDisplay,
       })
       .subscribe({
         next: (user) => {

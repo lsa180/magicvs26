@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -24,6 +25,13 @@ public class UserController {
         this.loginService = loginService;
         this.authService = authService;
         this.registroRepository = registroRepository;
+    }
+
+    @GetMapping("/exists")
+    public ResponseEntity<Map<String, Boolean>> exists(@RequestParam(name = "usernameOrEmail") String usernameOrEmail) {
+        String value = usernameOrEmail.trim();
+        boolean exists = loginService.existsByUsernameOrEmail(value);
+        return ResponseEntity.ok(Map.of("exists", exists));
     }
 
     // ---- Endpoints expuestos para Registro y Login ----
