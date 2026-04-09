@@ -4,6 +4,7 @@ import { Home } from './features/home/home';
 import { NewsComponent } from './features/news/news';
 import { Login } from './features/login/login';
 import { Registro } from './features/registro/registro';
+import { ProfilePageComponent } from './features/profile/profile-page.component';
 
 export const routes: Routes = [
   {
@@ -13,7 +14,10 @@ export const routes: Routes = [
       { path: '', component: Home },
       { path: 'noticias', component: NewsComponent },
       { path: 'login', component: Login },
-      { path: 'registro', component: Registro }
+      { path: 'registro', component: Registro },
+      { path: 'profile', pathMatch: 'full', redirectTo: 'profile/me' },
+      { path: 'profile/:userId/decks', component: ProfilePageComponent },
+      { path: 'profile/:userId', component: ProfilePageComponent }
     ]
   }
 ];
