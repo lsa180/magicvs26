@@ -33,5 +33,9 @@ public interface CardRepository extends JpaRepository<Card, Long> {
         """)
     Page<CardSearchProjection> searchProjectedByName(@Param("name") String name, Pageable pageable);
 
+    Optional<Card> findFirstByNameIgnoreCase(String name);
+
+    Optional<Card> findFirstByNameIgnoreCaseAndLang(String name, String lang);
+
     boolean existsByScryfallId(UUID scryfallId);
 }
