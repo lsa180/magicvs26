@@ -1,6 +1,7 @@
 package com.magicvs.backend.service;
 
 import com.magicvs.backend.dto.ProfileResponseDto;
+import com.magicvs.backend.dto.UpdateProfileDto;
 import com.magicvs.backend.dto.UserDeckSummaryDto;
 import com.magicvs.backend.model.User;
 import com.magicvs.backend.model.Deck;
@@ -45,6 +46,23 @@ public class UserProfileService {
         return getProfileByUserId(userId);
     }
 
+    @Transactional
+    public ProfileResponseDto updateProfile(String authorization, UpdateProfileDto dto) {
+        Long userId = extractUserIdFromAuthorization(authorization);
+        User user = registroRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        if (dto.getDisplayName() != null) user.setDisplayName(dto.getDisplayName());
+        if (dto.getAvatarUrl() != null) user.setAvatarUrl(dto.getAvatarUrl());
+        if (dto.getCountry() != null) user.setCountry(dto.getCountry());
+        if (dto.getBio() != null) user.setBio(dto.getBio());
+
+        user.setUpdatedAt(java.time.LocalDateTime.now());
+        User saved = registroRepository.save(user);
+
+        return toProfileResponse(saved, deckRepository.countByUserId(userId));
+    }
+
     public List<UserDeckSummaryDto> getDecksByUserId(Long userId) {
         if (!registroRepository.existsById(userId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
@@ -85,7 +103,9 @@ public class UserProfileService {
                 user.getGamesLost(),
                 user.getFriendTag(),
                 user.getFriendsCount(),
-                decksCount
+                decksCount,
+                user.getEmail(),
+                user.getCreatedAt()
         );
     }
 

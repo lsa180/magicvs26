@@ -1,20 +1,208 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
-import { ProfileResponse } from './profile.service';
+import { Component, Input, signal, Output, EventEmitter, inject, computed, HostListener, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ProfileResponse, ProfileService } from './profile.service';
+import { Country, CountryService } from '../../core/services/country.service';
 
 @Component({
   selector: 'app-profile-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './profile-header.component.html',
   styleUrl: './profile-header.component.scss',
 })
-export class ProfileHeaderComponent {
+export class ProfileHeaderComponent implements OnInit, OnChanges {
+  private readonly profileService = inject(ProfileService);
+  private readonly countryService = inject(CountryService);
+
   @Input({ required: true }) profile!: ProfileResponse;
   @Input() email: string | null = null;
   @Input() registrationDate: string | null = null;
-  @Input() role: string | null = null;
   @Input() isOwnProfile = false;
+
+  @Output() profileUpdated = new EventEmitter<ProfileResponse>();
+
+  // Use a signal to wrap the profile input for reactivity in computed signals
+  profileSignal = signal<ProfileResponse | null>(null);
+
+  isEditing = signal(false);
+  isSaving = signal(false);
+
+  // Buffer for editing
+  editData = signal<Partial<ProfileResponse>>({});
+
+  // MTG Color Palette
+  readonly manaColors = [
+    { name: 'Blanco', code: 'W', color: 'f0f2f0', text: 'zinc-900' },
+    { name: 'Azul', code: 'U', color: '0e68ab', text: 'white' },
+    { name: 'Negro', code: 'B', color: '150b00', text: 'zinc-100' },
+    { name: 'Rojo', code: 'R', color: 'd3202a', text: 'white' },
+    { name: 'Verde', code: 'G', color: '00733e', text: 'white' }
+  ];
+
+  selectedManaColor = signal(this.manaColors[0]);
+
+  currentSeed = signal('mage-1');
+  hoveredSeed = signal<string | null>(null);
+
+  getPreviewUrl = computed(() => {
+    const seed = this.hoveredSeed() || this.currentSeed();
+    return `/assets/avatars/${seed}.webp?m=${this.selectedManaColor().code}`;
+  });
+
+  manaColorFromUrl = computed(() => {
+    const url = this.profileSignal()?.avatarUrl;
+    if (!url || !url.includes('?m=')) return this.manaColors[0];
+    const code = url.split('?m=')[1];
+    return this.manaColors.find(c => c.code === code) || this.manaColors[0];
+  });
+
+  // Country Selection Logic
+  isCountryDropdownOpen = signal(false);
+  countrySearch = signal('');
+
+  countries = signal<Country[]>([]);
+
+  ngOnInit(): void {
+    this.countryService.getCountries().subscribe(list => {
+      this.countries.set(list);
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['profile']) {
+      this.profileSignal.set(this.profile);
+    }
+  }
+
+  filteredCountries = computed(() => {
+    const search = this.countrySearch().toLowerCase().trim();
+    const list = this.countries();
+    if (!search) return list;
+    return list.filter(c => c.name.toLowerCase().includes(search));
+  });
+
+  selectedCountryFlag = computed(() => {
+    const term = this.countrySearch().toLowerCase().trim();
+    const country = this.countries().find(c => c.name.toLowerCase() === term);
+    return country ? country.flag : null;
+  });
+
+  profileCountryFlag = computed(() => {
+    const name = this.profileSignal()?.country;
+    if (!name) return null;
+    const country = this.countries().find(c => c.name.toLowerCase() === name.toLowerCase());
+    return country ? country.flag : null;
+  });
+
+  // Local Avatar Files naming convention: mage-1.webp, mage-2.webp, etc.
+  readonly avatarSeeds = Array.from({ length: 20 }, (_, i) => `mage-${i + 1}`);
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.country-dropdown-container')) {
+      this.isCountryDropdownOpen.set(false);
+    }
+  }
+
+  selectCountry(country: Country): void {
+    this.editData.update(d => ({ ...d, country: country.name }));
+    this.countrySearch.set(country.name);
+    this.isCountryDropdownOpen.set(false);
+  }
+
+  selectAvatar(seed: string): void {
+    this.currentSeed.set(seed);
+    this.updateAvatarUrl();
+  }
+
+  setHoveredSeed(seed: string | null): void {
+    this.hoveredSeed.set(seed);
+  }
+
+  onCountrySearchChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.countrySearch.set(value);
+    this.editData.update(d => ({ ...d, country: value }));
+    this.isCountryDropdownOpen.set(true);
+  }
+
+  toggleEdit(): void {
+    if (this.isEditing()) {
+      this.cancelEdit();
+    } else {
+      const p = this.profileSignal();
+      if (!p) return;
+
+      this.editData.set({
+        displayName: p.displayName,
+        avatarUrl: p.avatarUrl,
+        country: p.country,
+        bio: p.bio
+      });
+      this.countrySearch.set(p.country || '');
+      
+      // Attempt to restore seed and color from saved URL
+      if (p.avatarUrl) {
+        const url = p.avatarUrl;
+        
+        // Extract seed
+        const parts = url.split('/');
+        const fileAndParams = parts[parts.length - 1];
+        const [seedWithExt] = fileAndParams.split('?');
+        const [seed] = seedWithExt.split('.');
+        
+        if (seed) this.currentSeed.set(seed);
+
+        // Extract mana code
+        if (url.includes('?m=')) {
+          const code = url.split('?m=')[1];
+          const color = this.manaColors.find(c => c.code === code);
+          if (color) this.selectedManaColor.set(color);
+        }
+      }
+      
+      this.isEditing.set(true);
+    }
+  }
+
+  cancelEdit(): void {
+    this.isEditing.set(false);
+  }
+
+  saveChanges(): void {
+    this.isSaving.set(true);
+    this.profileService.updateProfile(this.editData()).subscribe({
+      next: (updated) => {
+        this.profile = updated;
+        this.profileSignal.set(updated);
+        this.profileUpdated.emit(updated);
+        this.isSaving.set(false);
+        this.isEditing.set(false);
+      },
+      error: () => {
+        this.isSaving.set(false);
+      }
+    });
+  }
+
+  randomizeAvatar(): void {
+    const newSeed = this.avatarSeeds[Math.floor(Math.random() * this.avatarSeeds.length)];
+    this.currentSeed.set(newSeed);
+    this.updateAvatarUrl();
+  }
+
+  selectManaColor(color: any): void {
+    this.selectedManaColor.set(color);
+    this.updateAvatarUrl();
+  }
+
+  private updateAvatarUrl(): void {
+    const seed = this.currentSeed();
+    const url = `/assets/avatars/${seed}.webp?m=${this.selectedManaColor().code}`;
+    this.editData.update(d => ({ ...d, avatarUrl: url }));
+  }
 
   initials(name: string | null | undefined): string {
     const source = name?.trim() || 'UV';

@@ -7,6 +7,7 @@ interface StoredUser {
   id: number;
   username: string;
   email: string;
+  avatarUrl?: string | null;
   displayName?: string | null;
   friendTag?: string;
   token?: string;
@@ -22,6 +23,16 @@ export class MainLayout {
   isLoggedIn = false;
   displayName: string | null = null;
   friendTag: string | null = null;
+  avatarUrl: string | null = null;
+  manaColor: { name: string; color: string; code: string } | null = null;
+
+  private readonly manaColors = [
+    { name: 'Blanco', code: 'W', color: 'f0f2f0' },
+    { name: 'Azul', code: 'U', color: '0e68ab' },
+    { name: 'Negro', code: 'B', color: '150b00' },
+    { name: 'Rojo', code: 'R', color: 'd3202a' },
+    { name: 'Verde', code: 'G', color: '00733e' }
+  ];
 
   constructor(private router: Router) {
     this.isLoggedIn = !!localStorage.getItem('user');
@@ -54,11 +65,14 @@ export class MainLayout {
     if (!raw) {
       this.displayName = null;
       this.friendTag = null;
+      this.avatarUrl = null;
+      this.manaColor = null;
       return;
     }
     try {
       const u = JSON.parse(raw) as StoredUser;
-      // normalize and trim displayName to avoid accidental trailing spaces
+      
+      // Basic info
       const rawName = (u.displayName ?? u.username) as string | undefined;
       if (rawName) {
         const cleaned = rawName.replace(/\u00A0/g, ' ').trim();
@@ -67,9 +81,31 @@ export class MainLayout {
         this.displayName = u.username ?? null;
       }
       this.friendTag = (u.friendTag ?? null)?.toString() ?? null;
+
+      // Magic Metadata
+      this.avatarUrl = u.avatarUrl ?? null;
+      if (this.avatarUrl && (this.avatarUrl.includes('?m=') || this.avatarUrl.includes('#'))) {
+        const separator = this.avatarUrl.includes('?m=') ? '?m=' : '#';
+        const code = this.avatarUrl.split(separator)[1];
+        this.manaColor = this.manaColors.find(c => c.code === code) || null;
+      } else {
+        this.manaColor = null;
+      }
+
     } catch {
       this.displayName = null;
       this.friendTag = null;
+      this.avatarUrl = null;
+      this.manaColor = null;
     }
+  }
+
+  getInitials(): string {
+    const source = this.displayName || 'U';
+    return source
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
   }
 }

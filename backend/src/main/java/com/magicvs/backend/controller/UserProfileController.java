@@ -1,6 +1,7 @@
 package com.magicvs.backend.controller;
 
 import com.magicvs.backend.dto.ProfileResponseDto;
+import com.magicvs.backend.dto.UpdateProfileDto;
 import com.magicvs.backend.dto.UserDeckSummaryDto;
 import com.magicvs.backend.service.UserProfileService;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,14 @@ public class UserProfileController {
 			@RequestHeader(name = "Authorization", required = false) String authorization
 	) {
 		return ResponseEntity.ok(userProfileService.getProfileOfAuthenticatedUser(authorization));
+	}
+
+	@PatchMapping("/me")
+	public ResponseEntity<ProfileResponseDto> updateMyProfile(
+			@RequestHeader(name = "Authorization") String authorization,
+			@RequestBody UpdateProfileDto dto
+	) {
+		return ResponseEntity.ok(userProfileService.updateProfile(authorization, dto));
 	}
 
 	@GetMapping("/{userId}/decks")

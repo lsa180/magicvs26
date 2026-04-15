@@ -18,7 +18,6 @@ export interface ProfileResponse {
   decksCount: number | null;
   email?: string | null;
   createdAt?: string | null;
-  role?: string | null;
 }
 
 export interface ProfileDeckSummary {
@@ -64,6 +63,12 @@ export class ProfileService {
     return this.http
       .get<ApiDeckSummary[]>(`${this.buildUrl(userId)}/decks`, { headers: this.authHeaders() })
       .pipe(map((decks) => decks.map((deck) => this.normalizeDeck(deck))));
+  }
+
+  updateProfile(data: Partial<ProfileResponse>): Observable<ProfileResponse> {
+    return this.http
+      .patch<ProfileResponse>(`${this.apiUrl}/me`, data, { headers: this.authHeaders() })
+      .pipe(map((profile) => this.normalizeProfile(profile)));
   }
 
   private buildUrl(userId: string): string {
