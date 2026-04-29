@@ -41,6 +41,12 @@ public class UserProfileController {
         return ResponseEntity.ok(userProfileService.updateProfile(authorization, dto));
     }
 
+	// Endpoint de prueba para registrar una victoria y disparar logros
+	@PostMapping("/me/win")
+	public ResponseEntity<ProfileResponseDto> recordWin(@RequestHeader(name = "Authorization") String authorization) {
+		return ResponseEntity.ok(userProfileService.recordWin(authorization));
+	}
+
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteMyAccount(
             @RequestHeader(name = "Authorization") String authorization

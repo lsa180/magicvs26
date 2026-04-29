@@ -22,6 +22,15 @@ export interface ProfileResponse {
   lastSeenAt?: string | null;
   manualRegistration?: boolean;
   googleLinked?: boolean;
+  achievements?: AchievementDto[];
+}
+
+export interface AchievementDto {
+  code: string;
+  name: string;
+  description?: string | null;
+  badgeUri?: string | null;
+  unlockedAt?: string | null;
 }
 
 export interface ProfileDeckSummary {

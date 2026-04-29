@@ -1,0 +1,21 @@
+<div class="achievements">
+  <h2 class="section-title">Logros</h2>
+
+  <div *ngIf="loading" class="loading">Cargando...</div>
+
+  <div *ngIf="!loading && all.length === 0" class="empty">No hay logros definidos.</div>
+
+  <div class="grid" *ngIf="!loading && all.length > 0">
+    <div *ngFor="let a of all" class="card" [class.locked]="!isUnlocked(a.code)">
+      <div class="badge">
+        <img *ngIf="a.badgeUri && isUnlocked(a.code)" [src]="a.badgeUri" alt="badge"/>
+        <span *ngIf="!a.badgeUri" class="icon">🏅</span>
+      </div>
+      <div class="meta">
+        <div class="name">{{ a.name }}</div>
+        <div class="desc">{{ a.description }}</div>
+      </div>
+      <div class="status">{{ isUnlocked(a.code) ? 'Desbloqueado' : 'Bloqueado' }}</div>
+    </div>
+  </div>
+</div>

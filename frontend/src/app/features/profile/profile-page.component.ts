@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProfileDeckListComponent } from './profile-deck-list.component';
 import { ProfileHeaderComponent } from './profile-header.component';
 import { ProfileResponse, ProfileService, ProfileDeckSummary } from './profile.service';
+import { ProfileAchievementsComponent } from './profile-achievements.component';
 import { UserService } from '../../core/services/user.service';
 
 interface StoredUser {
@@ -20,7 +21,7 @@ interface StoredUser {
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, ProfileHeaderComponent, ProfileDeckListComponent],
+  imports: [CommonModule, RouterLink, ProfileHeaderComponent, ProfileDeckListComponent, ProfileAchievementsComponent],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.scss',
 })

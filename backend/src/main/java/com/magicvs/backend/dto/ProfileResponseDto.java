@@ -21,14 +21,17 @@ public class ProfileResponseDto {
 	private java.time.LocalDateTime lastSeenAt;
 	private Boolean manualRegistration;
 	private Boolean googleLinked;
+	private java.util.List<com.magicvs.backend.dto.UserAchievementDto> achievements;
 
 	public ProfileResponseDto() {
 	}
-
+    
+    
 	public ProfileResponseDto(Long id, String username, String displayName, String avatarUrl, String country, String bio,
 							  Integer eloRating, Integer gamesPlayed, Integer gamesWon, Integer gamesLost,
 							  String friendTag, Integer friendsCount, Long decksCount, String email, java.time.LocalDateTime createdAt,
-							  Boolean isOnline, java.time.LocalDateTime lastSeenAt, Boolean manualRegistration, Boolean googleLinked) {
+							  Boolean isOnline, java.time.LocalDateTime lastSeenAt, Boolean manualRegistration, Boolean googleLinked,
+							  java.util.List<com.magicvs.backend.dto.UserAchievementDto> achievements) {
 		this.id = id;
 		this.username = username;
 		this.displayName = displayName;
@@ -48,6 +51,7 @@ public class ProfileResponseDto {
 		this.lastSeenAt = lastSeenAt;
 		this.manualRegistration = manualRegistration;
 		this.googleLinked = googleLinked;
+		this.achievements = achievements;
 	}
 
 	public String getEmail() {
@@ -200,5 +204,13 @@ public class ProfileResponseDto {
 
 	public void setGoogleLinked(Boolean googleLinked) {
 		this.googleLinked = googleLinked;
+	}
+
+	public java.util.List<com.magicvs.backend.dto.UserAchievementDto> getAchievements() {
+		return achievements;
+	}
+
+	public void setAchievements(java.util.List<com.magicvs.backend.dto.UserAchievementDto> achievements) {
+		this.achievements = achievements;
 	}
 }

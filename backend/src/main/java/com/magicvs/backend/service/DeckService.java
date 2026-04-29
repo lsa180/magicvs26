@@ -26,6 +26,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.magicvs.backend.dto.ImportDeckRequestDTO;
 import com.magicvs.backend.dto.ImportDeckResponseDTO;
+import com.magicvs.backend.service.AchievementService;
+import com.magicvs.backend.model.AchievementTrigger;
 
 @Service
 public class DeckService {
@@ -36,11 +38,13 @@ public class DeckService {
     private final RegistroRepository userRepository;
     private final int minDeckCards;
     private final AuthService authService;
+    private final AchievementService achievementService;
     public DeckService(DeckRepository deckRepository, 
                        DeckCardRepository deckCardRepository,
                        CardRepository cardRepository,
                        RegistroRepository userRepository,
                        AuthService authService,
+                       AchievementService achievementService,
                        @Value("${deck.validation.min-cards:60}") int minDeckCards) {
         this.deckRepository = deckRepository;
         this.deckCardRepository = deckCardRepository;
@@ -48,6 +52,7 @@ public class DeckService {
         this.userRepository = userRepository;
         this.minDeckCards = minDeckCards;
         this.authService = authService;
+        this.achievementService = achievementService;
     }
 
     /**
@@ -109,6 +114,13 @@ public DeckResponseDTO createDeck(Long userId, CreateDeckDTO deckDTO, boolean sk
 
     syncDeckCards(deck, deckDTO.getCards());
     Deck savedDeck = deckRepository.save(deck);
+
+    // Check achievements related to deck creation
+    try {
+        achievementService.checkAndUnlockForTrigger(user.getId(), AchievementTrigger.DECK_CREATED);
+    } catch (Exception ex) {
+        // don't fail deck creation due to achievement errors
+    }
 
     return DeckResponseDTO.fromEntity(savedDeck);
 }

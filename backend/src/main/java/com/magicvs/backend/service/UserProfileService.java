@@ -29,11 +29,14 @@ public class UserProfileService {
     private final RegistroRepository registroRepository;
     private final DeckRepository deckRepository;
     private final AuthService authService;
+    private final com.magicvs.backend.service.AchievementService achievementService;
 
-    public UserProfileService(RegistroRepository registroRepository, DeckRepository deckRepository, AuthService authService) {
+    public UserProfileService(RegistroRepository registroRepository, DeckRepository deckRepository, AuthService authService,
+                              com.magicvs.backend.service.AchievementService achievementService) {
         this.registroRepository = registroRepository;
         this.deckRepository = deckRepository;
         this.authService = authService;
+        this.achievementService = achievementService;
     }
 
     public ProfileResponseDto getProfileByUserId(Long userId) {
@@ -47,6 +50,26 @@ public class UserProfileService {
     public ProfileResponseDto getProfileOfAuthenticatedUser(String authorization) {
         Long userId = extractUserIdFromAuthorization(authorization);
         return getProfileByUserId(userId);
+    }
+
+    @Transactional
+    public ProfileResponseDto recordWin(String authorization) {
+        Long userId = extractUserIdFromAuthorization(authorization);
+        User user = registroRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+
+        user.setGamesPlayed((user.getGamesPlayed() == null ? 0 : user.getGamesPlayed()) + 1);
+        user.setGamesWon((user.getGamesWon() == null ? 0 : user.getGamesWon()) + 1);
+        registroRepository.save(user);
+
+        // Trigger achievement checks
+        try {
+            achievementService.checkAndUnlockForTrigger(userId, com.magicvs.backend.model.AchievementTrigger.GAMES_WON);
+        } catch (Exception ex) {
+            // ignore achievement errors
+        }
+
+        return toProfileResponse(user, deckRepository.countByUserId(userId));
     }
 
     @Transactional
@@ -129,25 +152,26 @@ public class UserProfileService {
 
     private ProfileResponseDto toProfileResponse(User user, long decksCount) {
         return new ProfileResponseDto(
-                user.getId(),
-                user.getUsername(),
-                user.getDisplayName(),
-                user.getAvatarUrl(),
-                user.getCountry(),
-                user.getBio(),
-                user.getEloRating(),
-                user.getGamesPlayed(),
-                user.getGamesWon(),
-                user.getGamesLost(),
-                user.getFriendTag(),
-                user.getFriendsCount(),
-                decksCount,
-                user.getEmail(),
-                user.getCreatedAt(),
-                user.getIsOnline(),
-                user.getLastSeenAt(),
-                user.getManualRegistration(),
-                user.getGoogleId() != null
+            user.getId(),
+            user.getUsername(),
+            user.getDisplayName(),
+            user.getAvatarUrl(),
+            user.getCountry(),
+            user.getBio(),
+            user.getEloRating(),
+            user.getGamesPlayed(),
+            user.getGamesWon(),
+            user.getGamesLost(),
+            user.getFriendTag(),
+            user.getFriendsCount(),
+            decksCount,
+            user.getEmail(),
+            user.getCreatedAt(),
+            user.getIsOnline(),
+            user.getLastSeenAt(),
+            user.getManualRegistration(),
+            user.getGoogleId() != null,
+            achievementService.getUserAchievements(user.getId())
         );
     }
 
